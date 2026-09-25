@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>महाराष्ट्र पोलीस भरती - सराव परीक्षा</title>
+<style>
+  :root {
+    --primary: #1a365d;
+    --primary-light: #2b6cb0;
+    --accent: #d69e2e;
+    --bg: #f7fafc;
+    --card: #ffffff;
+    --text: #2d3748;
+    --text-muted: #718096;
+    --border: #e2e8f0;
+    --success: #38a169;
+    --danger: #e53e3e;
+    --answered: #3182ce;
+    --unanswered: #e2e8f0;
+    --current: #dd6b20;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, 'Arial Unicode MS', sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: var(--primary); color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px; }
+  .timer-badge { background: #c53030; color: #fff; font-size: 1rem; font-weight: bold; padding: 6px 14px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  
+  .container { max-width: 1000px; width: 100%; margin: 0 auto; padding: 16px; flex: 1; display: flex; flex-direction: column; }
+  
+  /* Start Screen */
+  #start-screen { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; margin-top: 20px; }
+  #start-screen h2 { color: var(--primary); margin-bottom: 16px; font-size: 1.4rem; }
+  .instructions-box { background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 18px; text-align: left; margin: 20px 0; font-size: 0.95rem; line-height: 1.6; }
+  .instructions-box ul { padding-left: 20px; margin-top: 8px; }
+  .btn-start { background: var(--primary); color: white; border: none; padding: 12px 36px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+  .btn-start:hover { background: var(--primary-light); }
+
+  /* Quiz Layout */
+  #quiz-screen { display: none; gap: 20px; flex-direction: column; }
+  @media (min-width: 768px) {
+    #quiz-screen { display: none; flex-direction: row; align-items: flex-start; }
+  }
+  .main-quiz-area { flex: 1; background: white; border-radius: 12px; padding: 22px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .palette-area { width: 100%; background: white; border-radius: 12px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  @media (min-width: 768px) {
+    .palette-area { width: 280px; position: sticky; top: 16px; }
+  }
+  
+  /* Question styling */
+  .q-meta { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; }
+  .q-badge { background: #edf2f7; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 700; }
+  .q-text { font-size: 1.15rem; font-weight: 600; color: #1a202c; line-height: 1.6; margin-bottom: 20px; }
+  
+  .options-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+  .option-item { display: flex; align-items: center; padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; background: #fff; }
+  .option-item:hover { border-color: var(--primary-light); background: #f7fafc; }
+  .option-item.selected { border-color: var(--primary); background: #ebf8ff; box-shadow: 0 0 0 1px var(--primary); }
+  .opt-letter { width: 32px; height: 32px; border-radius: 50%; background: #edf2f7; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 14px; flex-shrink: 0; color: var(--primary); }
+  .option-item.selected .opt-letter { background: var(--primary); color: white; }
+  .opt-text { font-size: 1rem; line-height: 1.4; color: #2d3748; }
+
+  /* Nav Buttons */
+  .nav-buttons { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 16px; }
+  .btn { padding: 10px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
+  .btn-secondary { background: #edf2f7; color: #4a5568; }
+  .btn-secondary:hover { background: #e2e8f0; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-danger { background: #e53e3e; color: white; }
+  .btn-danger:hover { background: #c53030; }
+
+  /* Palette */
+  .palette-header { font-size: 1rem; font-weight: bold; color: var(--primary); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+  .palette-btn { aspect-ratio: 1; border: 1px solid var(--border); border-radius: 6px; background: #fff; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+  .palette-btn:hover { transform: scale(1.05); }
+  .palette-btn.active { outline: 2px solid var(--current); font-weight: 900; }
+  .palette-btn.answered { background: var(--answered); color: white; border-color: var(--answered); }
+  .palette-btn.unanswered { background: #edf2f7; color: #4a5568; }
+
+  .palette-legend { font-size: 0.8rem; display: flex; flex-direction: column; gap: 6px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-box { width: 14px; height: 14px; border-radius: 3px; }
+  
+  /* Result Screen */
+  #result-screen { display: none; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+  .result-header { text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; }
+  .result-header h2 { color: var(--primary); font-size: 1.5rem; margin-bottom: 8px; }
+  .score-badge { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
+  
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 25px; }
+  .stat-card { background: #f7fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .stat-val { font-size: 1.3rem; font-weight: bold; margin-top: 4px; }
+  
+  .review-section { margin-top: 24px; }
+  .review-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 16px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #fff; }
+  .review-item.status-correct { border-left: 6px solid var(--success); }
+  .review-item.status-wrong { border-left: 6px solid var(--danger); }
+  .review-item.status-skipped { border-left: 6px solid var(--text-muted); }
+  .review-q-num { font-weight: bold; margin-bottom: 6px; font-size: 0.95rem; }
+  .review-opt { margin-top: 4px; font-size: 0.9rem; }
+  .review-exp { margin-top: 8px; background: #f7fafc; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; color: #4a5568; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+  .modal-box { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 400px; text-align: center; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>पोलीस भरती विशेष सराव परीक्षा - पद व संरचना</h1>
+  <div class="timer-badge" id="timer-badge">⏱ <span id="timer-display">30:00</span></div>
+</header>
+
+<div class="container">
+  <!-- Start Screen -->
+  <div id="start-screen">
+    <h2>महाराष्ट्र पोलीस दल रचना व पदे: ऑनलाइन टेस्ट</h2>
+    <p style="color: var(--text-muted); font-size: 1rem;">दिलेल्या अभ्यास घटकावर आधारित पोलीस भरती दर्जाची २० बहुपर्यायी प्रश्नांची परीक्षा</p>
+    
+    <div class="instructions-box">
+      <strong>परीक्षेचे नियम व सूचना:</strong>
+      <ul>
+        <li>एकूण प्रश्न: <b>२०</b></li>
+        <li>एकूण गुण: <b>२०</b> (प्रत्येक प्रश्नाला १ गुण)</li>
+        <li>वेळ मर्यादा: <b>३० मिनिटे</b></li>
+        <li>प्रत्येक प्रश्नाला ४ पर्याय आहेत, त्यापैकी १ योग्य पर्याय निवडा.</li>
+        <li>उजव्या किंवा खालील पॅलेटमधून कोणत्याही प्रश्नावर जाता येईल.</li>
+        <li>३० मिनिटे पूर्ण झाल्यावर परीक्षा आपोआप सबमिट होईल.</li>
+      </ul>
+    </div>
+    
+    <button class="btn-start" onclick="startTest()">परीक्षा सुरू करा (Start Test)</button>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div id="quiz-screen">
+    <div class="main-quiz-area">
+      <div class="q-meta">
+        <span class="q-badge" id="current-q-index">प्रश्न १ / २०</span>
+        <span id="answered-status-text">न सोडवलेला प्रश्न</span>
+      </div>
+
+      <div class="q-text" id="question-text">प्रश्न येथे लोड होईल...</div>
+
+      <div class="options-list" id="options-container">
+        <!-- Options rendered dynamically -->
+      </div>
+
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" id="btn-prev" onclick="navigateQuestion(-1)">मागील (Prev)</button>
+        <button class="btn btn-secondary" id="btn-clear" onclick="clearCurrentSelection()">पर्याय रद्द करा</button>
+        <button class="btn btn-primary" id="btn-next" onclick="navigateQuestion(1)">पुढील (Next)</button>
+        <button class="btn btn-danger" onclick="confirmSubmitTest()">सबमिट (Submit)</button>
+      </div>
+    </div>
+
+    <!-- Question Palette -->
+    <div class="palette-area">
+      <div class="palette-header">प्रश्न पॅलेट (Question Palette)</div>
+      <div class="palette-grid" id="palette-grid">
+        <!-- 20 grid buttons -->
+      </div>
+      <div class="palette-legend">
+        <div class="legend-item"><div class="legend-box" style="background: var(--answered)"></div> सोडवलेले प्रश्न (<span id="count-answered">0</span>)</div>
+        <div class="legend-item"><div class="legend-box" style="background: #edf2f7; border: 1px solid var(--border);"></div> न सोडवलेले प्रश्न (<span id="count-unanswered">20</span>)</div>
+        <div class="legend-item"><div class="legend-box" style="outline: 2px solid var(--current); background: #fff;"></div> चालू प्रश्न</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="result-screen">
+    <div class="result-header">
+      <h2>परीक्षेचा निकाल (Test Result)</h2>
+      <div class="score-badge" id="res-score">० / २०</div>
+      <p id="res-percentage" style="font-weight: 600; font-size: 1.1rem; color: var(--primary-light);">टक्केवारी: ०%</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem;">एकूण प्रश्न</div>
+        <div class="stat-val" style="color: var(--primary);">20</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem;">बरोबर उत्तरे</div>
+        <div class="stat-val" style="color: var(--success);" id="res-correct">0</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem;">चुकीची उत्तरे</div>
+        <div class="stat-val" style="color: var(--danger);" id="res-wrong">0</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem;">न सोडवलेले</div>
+        <div class="stat-val" style="color: var(--text-muted);" id="res-skipped">0</div>
+      </div>
+    </div>
+
+    <div class="review-section">
+      <div class="review-title">सविस्तर उत्तरपत्रिका (Answer Key & Review)</div>
+      <div id="review-list">
+        <!-- Review items rendered here -->
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <button class="btn btn-primary" onclick="location.reload()">पुन्हा परीक्षा द्या (Retake Test)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <h3 style="color: var(--primary); margin-bottom: 12px;">खात्री करा</h3>
+    <p style="font-size: 0.95rem; margin-bottom: 14px; color: #4a5568;" id="modal-summary">तुम्ही २० पैकी ० प्रश्नांची उत्तरे दिली आहेत. तुम्हाला खरोखर टेस्ट सबमिट करायची आहे का?</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirmModal()">रद्द करा (Cancel)</button>
+      <button class="btn btn-danger" onclick="submitTestFinal()">होय, सबमिट करा</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 20 Questions strictly based on notes: DGP, IPS, DySP/ACP, PSI, Badges, Academies, Supreme Court 2018 ruling, Ministries
+const questions = [
+  {
+    id: 1,
+    q: "राज्यातील पोलीस प्रशासनातील सर्वोच्च पद खालीलपैकी कोणते असते?",
+    options: [
+      "विशेष पोलीस महानिरीक्षक (Spl. IG)",
+      "पोलीस आयुक्त (CP)",
+      "पोलीस महासंचालक (DGP)",
+      "पोलीस अधीक्षक (SP)"
+    ],
+    correct: 2, // C
+    explanation: "पोलीस महासंचालक (DGP) हे राज्यातील पोलीस प्रशासनातील सर्वोच्च पद असते."
+  },
+  {
+    id: 2,
+    q: "'DGP' या संक्षिप्त रूपाचा (Full Form) अचूक विस्तार कोणता आहे?",
+    options: [
+      "Director General of Police",
+      "Department General of Police",
+      "Director Governor of Police",
+      "Deputy General of Police"
+    ],
+    correct: 0, // A
+    explanation: "DGP म्हणजे 'Director General of Police' (पोलीस महासंचालक) होय."
+  },
+  {
+    id: 3,
+    q: "पोलीस महासंचालक (DGP) हे प्रशासकीयदृष्ट्या थेट कोणाला जबाबदार असतात?",
+    options: [
+      "मुख्यमंत्र्यांना",
+      "गृहमंत्र्यांना",
+      "राज्यपालांना",
+      "मुख्य सचिवांना"
+    ],
+    correct: 1, // B
+    explanation: "DGP हे थेट गृहमंत्र्यांना जबाबदार असतात."
+  },
+  {
+    id: 4,
+    q: "पोलीस महासंचालक (DGP) हे किती स्टार (Star) दर्जाचे पोलीस अधिकारी असतात?",
+    options: [
+      "एक स्टार",
+      "दोन स्टार",
+      "तीन स्टार",
+      "चार स्टार"
+    ],
+    correct: 2, // C
+    explanation: "DGP हे तीन स्टार (Three Star) पोलीस अधिकारी असतात."
+  },
+  {
+    id: 5,
+    q: "DGP (पोलीस महासंचालक) यांच्या खांद्यावरील पदचिन्हांवर (Insignia) काय असते?",
+    options: [
+      "IPS अक्षर, तलवार व राजमुद्रा",
+      "फक्त राजमुद्रा आणि दोन स्टार",
+      "तीन स्टार आणि तलवार",
+      "केवळ राष्ट्रीय प्रतीक व दोन स्टार"
+    ],
+    correct: 0, // A
+    explanation: "DGP च्या खांद्यावर 'IPS' हे अक्षर, तलवार व राजमुद्रा (Crossed Sword and Baton with Ashoka Emblem) असते."
+  },
+  {
+    id: 6,
+    q: "सर्वोच्च न्यायालयाच्या २०१८ च्या निर्णयानुसार DGP पदावर नियुक्तीसाठी कोण तीन नावांचे नामांकन करते?",
+    options: [
+      "महाराष्ट्र लोकसेवा आयोग (MPSC)",
+      "केंद्रीय लोकसेवा आयोग (UPSC)",
+      "केंद्रीय गृह मंत्रालय",
+      "राज्य मंत्रिमंडळ समिती"
+    ],
+    correct: 1, // B
+    explanation: "२०१८ च्या सर्वोच्च न्यायालयाच्या निर्णयानुसार UPSC ने नामांकन केलेल्या तीन नावांमधून एकाची DGP म्हणून राज्य सरकारला नियुक्ती करावी लागते."
+  },
+  {
+    id: 7,
+    q: "IPS (भारतीय पोलीस सेवा) ही खालीलपैकी कोणत्या प्रकारची सेवा आहे?",
+    options: [
+      "फक्त केंद्र सरकारी सेवा",
+      "केवळ राज्य नागरी सेवा",
+      "अखिल भारतीय सेवा (All India Service)",
+      "निमशासकीय सेवा"
+    ],
+    correct: 2, // C
+    explanation: "IPS (Indian Police Service) ही एक अखिल भारतीय सेवा (All India Service) आहे."
+  },
+  {
+    id: 8,
+    q: "आयपीएस (IPS) अधिकाऱ्यांची निवड खालीलपैकी कोणत्या आयोगामार्फत केली जाते?",
+    options: [
+      "UPSC (केंद्रीय लोकसेवा आयोग)",
+      "MPSC (महाराष्ट्र लोकसेवा आयोग)",
+      "Staff Selection Commission (SSC)",
+      "पोलीस भरती महामंडळ"
+    ],
+    correct: 0, // A
+    explanation: "IPS अधिकाऱ्यांची निवड UPSC (Union Public Service Commission) मार्फत घेतली जाते."
+  },
+  {
+    id: 9,
+    q: "IPS अधिकाऱ्यांची नेमणूक खालीलपैकी कोठे होते?",
+    options: [
+      "फक्त केंद्र सरकारच्या विभागात",
+      "फक्त त्यांच्या गृह राज्यात",
+      "केंद्र व विविध राज्यांमध्ये",
+      "केवळ आंतरराष्ट्रीय सुरक्षा विभागात"
+    ],
+    correct: 2, // C
+    explanation: "IPS अधिकाऱ्यांची नेमणूक केंद्र आणि विविध राज्यांमध्ये केली जाते."
+  },
+  {
+    id: 10,
+    q: "नवनिर्वाचित IPS अधिकाऱ्यांचे प्रशिक्षण कोणत्या संस्थेत दिले जाते?",
+    options: [
+      "महाराष्ट्र पोलीस अकादमी (नाशिक)",
+      "लाल बहादूर शास्त्री प्रशासन अकादमी (मसूरी)",
+      "सरदार वल्लभभाई पटेल राष्ट्रीय पोलीस ॲकॅडमी (हैदराबाद)",
+      "राष्ट्रीय संरक्षण प्रबोधिनी (पुणे)"
+    ],
+    correct: 2, // C
+    explanation: "IPS अधिकाऱ्यांचे मूलभूत प्रशिक्षण 'सरदार वल्लभभाई पटेल राष्ट्रीय पोलीस ॲकॅडमी (SVPNPA), हैदराबाद' येथे होते."
+  },
+  {
+    id: 11,
+    q: "सरदार वल्लभभाई पटेल राष्ट्रीय पोलीस ॲकॅडमी (SVPNPA) खालीलपैकी कोणत्या शहरात स्थित आहे?",
+    options: [
+      "नवी दिल्ली",
+      "हैदराबाद",
+      "बंगळुरू",
+      "नागपूर"
+    ],
+    correct: 1, // B
+    explanation: "सरदार वल्लभभाई पटेल राष्ट्रीय पोलीस ॲकॅडमी हैदराबाद (तेलंगणा) येथे स्थित आहे."
+  },
+  {
+    id: 12,
+    q: "'PSI' या पदाचा अचूक विस्तार (Full Form) कोणता आहे?",
+    options: [
+      "Police Senior Inspector",
+      "Police Security Incharge",
+      "Police Sub Inspector",
+      "Provincial Sub Inspector"
+    ],
+    correct: 2, // C
+    explanation: "PSI चा अचूक विस्तार 'Police Sub Inspector' (पोलीस उपनिरीक्षक) असा होतो."
+  },
+  {
+    id: 13,
+    q: "पोलीस उपनिरीक्षक (PSI) पदाची निवड थेट स्पर्धा परीक्षेद्वारे कोणत्या आयोगामार्फत केली जाते?",
+    options: [
+      "UPSC",
+      "MPSC",
+      "SSC",
+      "जिल्हा पोलीस निवड मंडळ"
+    ],
+    correct: 1, // B
+    explanation: "PSI पदाची थेट निवड MPSC (महाराष्ट्र लोकसेवा आयोग) मार्फत किंवा पदोन्नतीने (Promotion) केली जाते."
+  },
+  {
+    id: 14,
+    q: "महाराष्ट्र पोलीस उपनिरीक्षक (PSI) अधिकाऱ्यांचे प्रशिक्षण कोठे पार पडते?",
+    options: [
+      "महाराष्ट्र पोलीस अकादमी (नाशिक)",
+      "पोलीस संशोधन केंद्र (पुणे)",
+      "गुप्तवार्ता प्रबोधिनी (नागपूर)",
+      "राष्ट्रीय पोलीस अकादमी (हैदराबाद)"
+    ],
+    correct: 0, // A
+    explanation: "PSI चे प्रशिक्षण 'महाराष्ट्र पोलीस अकादमी (MPA), नाशिक' येथे होते."
+  },
+  {
+    id: 15,
+    q: "'म.पो.से.' या संक्षेपाचा योग्य अर्थ खालीलपैकी कोणता आहे?",
+    options: [
+      "महाराष्ट्र पोलीस सैनिक",
+      "महाराष्ट्र पोलीस सेवा",
+      "मुंबई पोलीस सुरक्षा",
+      "मध्य पोलीस संस्था"
+    ],
+    correct: 1, // B
+    explanation: "'म.पो.से.' म्हणजेच 'महाराष्ट्र पोलीस सेवा' (Maharashtra Police Service - MPS) होय."
+  },
+  {
+    id: 16,
+    q: "शहरातील किंवा विशिष्ट विभागातील पोलीस उपअधीक्षक दर्जाच्या अधिकाऱ्याला काय म्हटले जाते?",
+    options: [
+      "ACP (Assistant Commissioner of Police)",
+      "DCP (Deputy Commissioner of Police)",
+      "API (Assistant Police Inspector)",
+      "SP (Superintendent of Police)"
+    ],
+    correct: 0, // A
+    explanation: "ग्रामीण भागात DySP (पोलीस उपअधीक्षक) आणि आयुक्त कार्यक्षेत्रात ACP (सहाय्यक पोलीस आयुक्त) हे समकक्ष दर्जाचे पद असते."
+  },
+  {
+    id: 17,
+    q: "राज्यातील संपूर्ण पोलीस दलाचे नियंत्रण व संचलन थेट कोणाच्या नियंत्रणाखाली असते?",
+    options: [
+      "पोलीस अधीक्षक (SP)",
+      "पोलीस उपमहानिरीक्षक (DIG)",
+      "पोलीस महासंचालक (DGP)",
+      "गृह राज्यमंत्री"
+    ],
+    correct: 2, // C
+    explanation: "DGP यांच्या नियंत्रणात संपूर्ण राज्यातील पोलीस कार्य करतात."
+  },
+  {
+    id: 18,
+    q: "पोलीस उपनिरीक्षक (PSI) पदावर नियुक्ती खालीलपैकी कोणत्या मार्गाने होते?",
+    options: [
+      "केवळ थेट स्पर्धा परीक्षेद्वारे",
+      "केवळ अंतर्गत खात्यातील पदोन्नतीने",
+      "MPSC स्पर्धा परीक्षा आणि पदोन्नती (Promotion) या दोन्ही मार्गाने",
+      "केवळ केंद्रीय लोकसेवा आयोगामार्फत"
+    ],
+    correct: 2, // C
+    explanation: "PSI पदाची निवड MPSC परीक्षा तसेच खात्यांतर्गत पदोन्नतीने (Promotion) केली जाते."
+  },
+  {
+    id: 19,
+    q: "सर्वोच्च न्यायालयाच्या २०१८ च्या निर्देशांनुसार, राज्य सरकार कोणाच्या नामांकनाशिवाय थेट DGP पदावर नियुक्ती करू शकत नाही?",
+    options: [
+      "राष्ट्रपती",
+      "केंद्रीय लोकसेवा आयोग (UPSC)",
+      "उच्च न्याय
